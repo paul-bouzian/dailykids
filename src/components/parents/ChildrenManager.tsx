@@ -7,7 +7,7 @@ import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { db, type Child } from "@/lib/db";
 import { COLORS, MASCOTS } from "@/lib/utils";
 import { StackHeader } from "./StackHeader";
-import { BottomSheet } from "@/components/ui/BottomSheet";
+import { BottomSheet, useBottomSheetDismiss } from "@/components/ui/BottomSheet";
 
 export function ChildrenManager({ back }: { back: () => void }) {
   const children = useLiveQuery(() =>
@@ -98,6 +98,21 @@ function ChildEditor({
   childrenCount: number;
   onClose: () => void;
 }) {
+  return (
+    <BottomSheet onClose={onClose} title={child ? "Modifier" : "Nouvel enfant"}>
+      <ChildForm child={child} childrenCount={childrenCount} />
+    </BottomSheet>
+  );
+}
+
+function ChildForm({
+  child,
+  childrenCount,
+}: {
+  child: Child | null;
+  childrenCount: number;
+}) {
+  const dismiss = useBottomSheetDismiss();
   const [name, setName] = useState(child?.name ?? "");
   const [mascot, setMascot] = useState(child?.mascot ?? MASCOTS[0]);
   const [color, setColor] = useState(child?.color ?? COLORS[0].hex);
@@ -119,7 +134,7 @@ function ChildEditor({
         stars: 0,
       });
     }
-    onClose();
+    dismiss?.();
   };
 
   const remove = async () => {
@@ -136,11 +151,11 @@ function ChildEditor({
       }
       await db.completions.where("childId").equals(child.id!).delete();
     });
-    onClose();
+    dismiss?.();
   };
 
   return (
-    <BottomSheet onClose={onClose} title={child ? "Modifier" : "Nouvel enfant"}>
+    <>
       <div className="px-5 pb-6 space-y-4">
         <input
           type="text"
@@ -205,6 +220,6 @@ function ChildEditor({
           </button>
         )}
       </div>
-    </BottomSheet>
+    </>
   );
 }

@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 import { Plus, Star, Trash2 } from "lucide-react";
 import { db, type Reward } from "@/lib/db";
 import { StackHeader } from "./StackHeader";
-import { BottomSheet } from "@/components/ui/BottomSheet";
+import { BottomSheet, useBottomSheetDismiss } from "@/components/ui/BottomSheet";
 
 const REWARD_EMOJIS = ["🍭", "🍦", "🎁", "📺", "🎮", "🛝", "🎨", "🚲", "🧸", "🎬", "🍕", "🏊"];
 
@@ -73,6 +73,15 @@ function RewardEditor({
   reward: Reward | null;
   onClose: () => void;
 }) {
+  return (
+    <BottomSheet onClose={onClose} title={reward ? "Modifier" : "Nouvelle récompense"}>
+      <RewardForm reward={reward} />
+    </BottomSheet>
+  );
+}
+
+function RewardForm({ reward }: { reward: Reward | null }) {
+  const dismiss = useBottomSheetDismiss();
   const [label, setLabel] = useState(reward?.label ?? "");
   const [emoji, setEmoji] = useState(reward?.emoji ?? REWARD_EMOJIS[0]);
   const [cost, setCost] = useState(reward?.starsCost ?? 5);
@@ -84,17 +93,17 @@ function RewardEditor({
     } else {
       await db.rewards.add({ label: label.trim(), emoji, starsCost: cost });
     }
-    onClose();
+    dismiss?.();
   };
 
   const remove = async () => {
     if (!reward) return;
     await db.rewards.delete(reward.id!);
-    onClose();
+    dismiss?.();
   };
 
   return (
-    <BottomSheet onClose={onClose} title={reward ? "Modifier" : "Nouvelle récompense"}>
+    <>
       <div className="px-5 pb-6 space-y-4">
         <input
           type="text"
@@ -154,6 +163,6 @@ function RewardEditor({
           </button>
         )}
       </div>
-    </BottomSheet>
+    </>
   );
 }

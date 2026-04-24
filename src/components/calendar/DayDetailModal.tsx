@@ -5,7 +5,7 @@ import type { CalendarEvent, Child } from "@/lib/db";
 import { db } from "@/lib/db";
 import { eventOccursOn } from "@/lib/recurrence";
 import { parseYmd } from "@/lib/utils";
-import { BottomSheet } from "@/components/ui/BottomSheet";
+import { BottomSheet, useBottomSheetDismiss } from "@/components/ui/BottomSheet";
 
 const FORMATTER = new Intl.DateTimeFormat("fr-FR", {
   weekday: "long",
@@ -26,9 +26,32 @@ export function DayDetailModal({
   onClose: () => void;
   onAddEvent: (d: string) => void;
 }) {
-  const dayEvents = events.filter((e) => eventOccursOn(e, date));
   const title = FORMATTER.format(parseYmd(date));
+  return (
+    <BottomSheet onClose={onClose} title={title}>
+      <DayDetailBody
+        date={date}
+        events={events}
+        children={children}
+        onAddEvent={onAddEvent}
+      />
+    </BottomSheet>
+  );
+}
 
+function DayDetailBody({
+  date,
+  events,
+  children,
+  onAddEvent,
+}: {
+  date: string;
+  events: CalendarEvent[];
+  children: Child[];
+  onAddEvent: (d: string) => void;
+}) {
+  const dismiss = useBottomSheetDismiss();
+  const dayEvents = events.filter((e) => eventOccursOn(e, date));
   const childMap = Object.fromEntries(children.map((c) => [c.id!, c]));
 
   const del = async (id: number) => {
@@ -36,7 +59,7 @@ export function DayDetailModal({
   };
 
   return (
-    <BottomSheet onClose={onClose} title={title}>
+    <>
       <div className="px-5 pb-6 space-y-3">
         {dayEvents.length === 0 ? (
           <div className="py-8 text-center">
@@ -97,12 +120,12 @@ export function DayDetailModal({
         </button>
       </div>
       <button
-        onClick={onClose}
+        onClick={() => dismiss?.()}
         aria-label="Fermer"
         className="absolute top-3 right-3 size-9 rounded-full bg-slate-100 flex items-center justify-center"
       >
         <X className="size-5 text-slate-500" />
       </button>
-    </BottomSheet>
+    </>
   );
 }

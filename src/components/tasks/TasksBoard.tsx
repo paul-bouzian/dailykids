@@ -23,17 +23,18 @@ export function TasksBoard() {
     [today]
   );
 
-  const autoPeriod = settings
+  const period = settings
     ? currentPeriod(settings.dayNightThreshold)
     : "day";
-
-  const [manualPeriod, setManualPeriod] = useState<"day" | "night" | null>(null);
-  const period = manualPeriod ?? autoPeriod;
 
   const [, setTick] = useState(0);
   useEffect(() => {
     const off = scheduleMidnightReset(() => setTick((n) => n + 1));
     return off;
+  }, []);
+  useEffect(() => {
+    const id = window.setInterval(() => setTick((n) => n + 1), 60_000);
+    return () => clearInterval(id);
   }, []);
 
   if (!children || !tasks || !settings || !completions) {
@@ -63,16 +64,13 @@ export function TasksBoard() {
           </p>
         </div>
 
-        <button
-          onClick={() =>
-            setManualPeriod(period === "day" ? "night" : "day")
-          }
-          className={`flex items-center gap-2 rounded-full px-4 py-2 shadow-lg font-semibold text-sm transition ${
+        <div
+          className={`flex items-center gap-2 rounded-full px-4 py-2 shadow-lg font-semibold text-sm pointer-events-none ${
             isNight
               ? "bg-white/20 text-white backdrop-blur border border-white/20"
               : "bg-white text-slate-700"
           }`}
-          aria-label="Changer de période"
+          aria-label={isNight ? "Période : soir" : "Période : jour"}
         >
           {isNight ? (
             <>
@@ -83,7 +81,7 @@ export function TasksBoard() {
               <Sun className="size-4" strokeWidth={2.5} /> Jour
             </>
           )}
-        </button>
+        </div>
       </div>
 
       <div className="relative z-10 flex-1 min-h-0 mt-4">

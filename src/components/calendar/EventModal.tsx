@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import { X } from "lucide-react";
 import { db, type Child, type Recurrence } from "@/lib/db";
 import { ymd } from "@/lib/utils";
-import { BottomSheet } from "@/components/ui/BottomSheet";
+import { BottomSheet, useBottomSheetDismiss } from "@/components/ui/BottomSheet";
 
 export function EventModal({
   initialDate,
@@ -16,6 +16,21 @@ export function EventModal({
   children: Child[];
   onClose: () => void;
 }) {
+  return (
+    <BottomSheet onClose={onClose} title="Nouvel événement">
+      <EventForm initialDate={initialDate} children={children} />
+    </BottomSheet>
+  );
+}
+
+function EventForm({
+  initialDate,
+  children,
+}: {
+  initialDate?: string;
+  children: Child[];
+}) {
+  const dismiss = useBottomSheetDismiss();
   const [label, setLabel] = useState("");
   const [emoji, setEmoji] = useState("🎉");
   const [date, setDate] = useState(initialDate ?? ymd());
@@ -38,11 +53,11 @@ export function EventModal({
       childIds: Array.from(selected),
       recurrence,
     });
-    onClose();
+    dismiss?.();
   };
 
   return (
-    <BottomSheet onClose={onClose} title="Nouvel événement">
+    <>
       <div className="space-y-4 px-5 pb-6">
         <div className="flex gap-3">
           <input
@@ -136,12 +151,12 @@ export function EventModal({
         </motion.button>
       </div>
       <button
-        onClick={onClose}
+        onClick={() => dismiss?.()}
         aria-label="Fermer"
         className="absolute top-3 right-3 size-9 rounded-full bg-slate-100 flex items-center justify-center"
       >
         <X className="size-5 text-slate-500" />
       </button>
-    </BottomSheet>
+    </>
   );
 }

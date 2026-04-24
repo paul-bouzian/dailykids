@@ -7,7 +7,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { db, type Period, type Task } from "@/lib/db";
 import { TASK_EMOJIS } from "@/lib/utils";
 import { StackHeader } from "./StackHeader";
-import { BottomSheet } from "@/components/ui/BottomSheet";
+import { BottomSheet, useBottomSheetDismiss } from "@/components/ui/BottomSheet";
 
 export function TasksManager({ back }: { back: () => void }) {
   const tasks = useLiveQuery(() => db.tasks.orderBy("order").toArray());
@@ -119,6 +119,23 @@ function TaskEditor({
   children: { id?: number; name: string; mascot: string; color: string }[];
   onClose: () => void;
 }) {
+  return (
+    <BottomSheet onClose={onClose} title={task ? "Modifier la tâche" : "Nouvelle tâche"}>
+      <TaskForm task={task} tasksCount={tasksCount} children={children} />
+    </BottomSheet>
+  );
+}
+
+function TaskForm({
+  task,
+  tasksCount,
+  children,
+}: {
+  task: Task | null;
+  tasksCount: number;
+  children: { id?: number; name: string; mascot: string; color: string }[];
+}) {
+  const dismiss = useBottomSheetDismiss();
   const [label, setLabel] = useState(task?.label ?? "");
   const [emoji, setEmoji] = useState(task?.emoji ?? TASK_EMOJIS[0]);
   const [periods, setPeriods] = useState<Set<Period>>(
@@ -160,18 +177,18 @@ function TaskEditor({
         order: tasksCount,
       });
     }
-    onClose();
+    dismiss?.();
   };
 
   const remove = async () => {
     if (!task) return;
     await db.tasks.delete(task.id!);
     await db.completions.where("taskId").equals(task.id!).delete();
-    onClose();
+    dismiss?.();
   };
 
   return (
-    <BottomSheet onClose={onClose} title={task ? "Modifier la tâche" : "Nouvelle tâche"}>
+    <>
       <div className="px-5 pb-6 space-y-4">
         <input
           type="text"
@@ -267,6 +284,6 @@ function TaskEditor({
           </button>
         )}
       </div>
-    </BottomSheet>
+    </>
   );
 }
