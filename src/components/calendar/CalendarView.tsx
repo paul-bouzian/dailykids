@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -22,6 +22,7 @@ export function CalendarView() {
   const [direction, setDirection] = useState(0);
   const [eventModal, setEventModal] = useState<{ date?: string } | null>(null);
   const [dayDetail, setDayDetail] = useState<string | null>(null);
+  const pendingAdd = useRef<string | null>(null);
 
   const children = useLiveQuery(() => db.children.orderBy("order").toArray());
   const events = useLiveQuery(() => db.events.toArray());
@@ -109,10 +110,16 @@ export function CalendarView() {
           date={dayDetail}
           events={events ?? []}
           children={children ?? []}
-          onClose={() => setDayDetail(null)}
-          onAddEvent={(d) => {
+          onClose={() => {
             setDayDetail(null);
-            setEventModal({ date: d });
+            if (pendingAdd.current) {
+              const d = pendingAdd.current;
+              pendingAdd.current = null;
+              setEventModal({ date: d });
+            }
+          }}
+          onAddEvent={(d) => {
+            pendingAdd.current = d;
           }}
         />
       )}

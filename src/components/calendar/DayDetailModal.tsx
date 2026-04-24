@@ -113,7 +113,10 @@ function DayDetailBody({
         )}
 
         <button
-          onClick={() => onAddEvent(date)}
+          onClick={() => {
+            onAddEvent(date);
+            dismiss?.();
+          }}
           className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-orange-400 to-pink-400 text-white font-bold py-3 shadow-lg"
         >
           <Plus className="size-5" strokeWidth={3} /> Ajouter un événement
