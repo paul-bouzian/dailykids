@@ -12,9 +12,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="relative min-h-dvh flex flex-col overflow-hidden">
+    <div className="relative h-dvh flex flex-col overflow-hidden">
       <ServiceWorkerRegister />
-      <main className="flex-1 min-h-0 overflow-hidden pb-24">{children}</main>
+      <main className="flex-1 min-h-0 overflow-hidden">{children}</main>
       <BottomTabs />
     </div>
   );

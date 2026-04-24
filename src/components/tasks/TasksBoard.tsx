@@ -90,7 +90,7 @@ export function TasksBoard() {
         {children.length === 0 ? (
           <EmptyState night={isNight} />
         ) : (
-          <div className="h-full overflow-x-auto overflow-y-hidden no-scrollbar px-4 pb-4">
+          <div className="h-full overflow-x-auto overflow-y-hidden no-scrollbar px-4 pb-28">
             <div className="flex gap-4 h-full">
               <AnimatePresence mode="popLayout">
                 {children.map((child) => (

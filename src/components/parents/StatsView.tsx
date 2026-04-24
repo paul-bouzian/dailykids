@@ -30,7 +30,7 @@ export function StatsView({ back }: { back: () => void }) {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <StackHeader title="Statistiques" back={back} />
-      <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-3 pb-28 space-y-3">
         {children.length === 0 ? (
           <div className="text-center py-12 text-slate-400">
             <div className="text-5xl mb-3">📊</div>

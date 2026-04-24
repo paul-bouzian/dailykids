@@ -27,8 +27,10 @@ function buildGrid(year: number, month: number): Cell[] {
     });
     current.setDate(current.getDate() + 1);
   }
-  while (cells.length > 35 && cells[cells.length - 1].date.getMonth() !== month && cells[cells.length - 8].date.getMonth() !== month) {
-    cells.pop();
+  while (cells.length > 35) {
+    const lastRow = cells.slice(-7);
+    if (lastRow.some((c) => c.date.getMonth() === month)) break;
+    cells.splice(-7, 7);
   }
   return cells;
 }

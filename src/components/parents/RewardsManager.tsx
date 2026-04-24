@@ -31,7 +31,7 @@ export function RewardsManager({ back }: { back: () => void }) {
           </button>
         }
       />
-      <div className="flex-1 overflow-y-auto px-3 pb-4">
+      <div className="flex-1 overflow-y-auto px-3 pb-28">
         {rewards.length === 0 ? (
           <div className="text-center py-12 text-slate-400">
             <div className="text-5xl mb-3">✨</div>

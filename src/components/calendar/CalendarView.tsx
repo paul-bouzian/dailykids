@@ -68,7 +68,7 @@ export function CalendarView() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 mt-2 overflow-hidden relative">
+      <div className="flex-1 min-h-0 mt-2 overflow-hidden relative pb-24 flex">
         <AnimatePresence mode="wait" initial={false} custom={direction}>
           <motion.div
             key={`${cursor.year}-${cursor.month}`}
@@ -84,7 +84,7 @@ export function CalendarView() {
               if (info.offset.x < -60) shift(1);
               else if (info.offset.x > 60) shift(-1);
             }}
-            className="absolute inset-0 px-3"
+            className="flex-1 min-h-0 px-3"
           >
             <MonthGrid
               year={cursor.year}

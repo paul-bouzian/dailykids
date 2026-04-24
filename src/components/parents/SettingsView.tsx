@@ -94,7 +94,7 @@ export function SettingsView({ back }: { back: () => void }) {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <StackHeader title="Paramètres" back={back} />
-      <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 pb-28 space-y-4">
         {saved && (
           <div className="rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold text-center py-2">
             ✓ Enregistré

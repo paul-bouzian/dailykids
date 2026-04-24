@@ -54,7 +54,7 @@ export function ParentsHome({
   navigate: (r: ParentsRoute) => void;
 }) {
   return (
-    <div className="h-full overflow-y-auto px-5 pt-5 pb-4">
+    <div className="h-full overflow-y-auto px-5 pt-5 pb-28">
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-slate-800">Espace parents</h1>
         <p className="text-sm text-slate-500">Tout ce dont tu as besoin pour gérer DailyKids.</p>
