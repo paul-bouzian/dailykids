@@ -1,0 +1,50 @@
+"use client";
+
+import { motion, AnimatePresence } from "motion/react";
+
+export function BottomSheet({
+  onClose,
+  title,
+  children,
+}: {
+  onClose: () => void;
+  title?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <AnimatePresence>
+      <motion.div
+        key="backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/40 z-[100]"
+        onClick={onClose}
+      />
+      <motion.div
+        key="sheet"
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.6 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 120) onClose();
+        }}
+        className="fixed bottom-0 inset-x-0 z-[101] bg-white rounded-t-[2rem] shadow-2xl max-h-[90vh] overflow-y-auto"
+      >
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="w-10 h-1.5 rounded-full bg-slate-300" />
+        </div>
+        {title && (
+          <h2 className="text-center text-lg font-bold text-slate-800 pb-3">
+            {title}
+          </h2>
+        )}
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
