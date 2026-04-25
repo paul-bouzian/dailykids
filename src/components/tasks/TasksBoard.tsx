@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { db } from "@/lib/db";
-import { currentPeriod } from "@/lib/day-night";
+import { ALL_WEEKDAYS, db } from "@/lib/db";
+import { currentPeriod, currentWeekday } from "@/lib/day-night";
 import { ymd } from "@/lib/utils";
 import { scheduleMidnightReset } from "@/lib/reset-scheduler";
 import { ChildColumn } from "./ChildColumn";
@@ -26,6 +26,7 @@ export function TasksBoard() {
   const period = settings
     ? currentPeriod(settings.dayNightThreshold)
     : "day";
+  const todayWeekday = currentWeekday();
 
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -105,7 +106,8 @@ export function TasksBoard() {
                       tasks={tasks.filter(
                         (t) =>
                           t.childIds.includes(child.id!) &&
-                          t.periods.includes(period)
+                          t.periods.includes(period) &&
+                          (t.weekdays ?? ALL_WEEKDAYS).includes(todayWeekday)
                       )}
                       completions={completions.filter(
                         (c) => c.childId === child.id && c.period === period

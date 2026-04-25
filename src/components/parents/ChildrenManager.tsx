@@ -168,12 +168,12 @@ function ChildForm({
 
         <div>
           <label className="text-xs font-bold text-slate-500 mb-2 block">MASCOTTE</label>
-          <div className="grid grid-cols-8 gap-1.5">
+          <div className="grid grid-cols-8 gap-1">
             {MASCOTS.map((m) => (
               <button
                 key={m}
                 onClick={() => setMascot(m)}
-                className={`aspect-square rounded-xl flex items-center justify-center text-2xl transition ${
+                className={`aspect-square rounded-lg flex items-center justify-center text-lg transition ${
                   mascot === m
                     ? "bg-sky-100 ring-2 ring-sky-400"
                     : "bg-slate-50"
@@ -187,13 +187,13 @@ function ChildForm({
 
         <div>
           <label className="text-xs font-bold text-slate-500 mb-2 block">COULEUR</label>
-          <div className="grid grid-cols-6 gap-2">
+          <div className="grid grid-cols-8 gap-1.5">
             {COLORS.map((c) => (
               <button
                 key={c.hex}
                 onClick={() => setColor(c.hex)}
-                className={`aspect-square rounded-full border-4 transition ${
-                  color === c.hex ? "border-slate-700 scale-105" : "border-white"
+                className={`aspect-square rounded-full border-2 transition ${
+                  color === c.hex ? "border-slate-700 scale-110" : "border-white"
                 }`}
                 style={{ backgroundColor: c.hex }}
                 aria-label={c.name}

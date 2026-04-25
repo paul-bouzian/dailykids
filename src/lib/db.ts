@@ -3,6 +3,10 @@ import Dexie, { type Table } from "dexie";
 export type Period = "day" | "night";
 export type Recurrence = "none" | "weekly" | "monthly";
 
+/** 0 = lundi, 1 = mardi, ..., 6 = dimanche */
+export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export const ALL_WEEKDAYS: Weekday[] = [0, 1, 2, 3, 4, 5, 6];
+
 export interface Child {
   id?: number;
   name: string;
@@ -10,6 +14,8 @@ export interface Child {
   color: string;
   order: number;
   stars: number;
+  /** Ordre des taskIds spécifique à cet enfant. Si absent, fallback sur task.order. */
+  taskOrder?: number[];
 }
 
 export interface Task {
@@ -18,6 +24,7 @@ export interface Task {
   emoji: string;
   childIds: number[];
   periods: Period[];
+  weekdays: Weekday[];
   order: number;
 }
 
@@ -72,6 +79,22 @@ class DailyKidsDB extends Dexie {
       rewards: "++id",
       settings: "id",
     });
+    this.version(2)
+      .stores({
+        children: "++id, order",
+        tasks: "++id, order",
+        completions: "++id, [taskId+childId+date+period], date, childId",
+        events: "++id, date",
+        rewards: "++id",
+        settings: "id",
+      })
+      .upgrade(async (tx) => {
+        await tx.table("tasks").toCollection().modify((t) => {
+          if (!Array.isArray(t.weekdays) || t.weekdays.length === 0) {
+            t.weekdays = [...ALL_WEEKDAYS];
+          }
+        });
+      });
   }
 }
 
@@ -106,15 +129,16 @@ export async function ensureDefaults() {
       stars: 0,
     });
 
+    const all: Weekday[] = [...ALL_WEEKDAYS];
     await db.tasks.bulkAdd([
-      { label: "Se brosser les dents", emoji: "🪥", childIds: [id1, id2], periods: ["day", "night"], order: 0 },
-      { label: "Faire le lit", emoji: "🛏️", childIds: [id1, id2], periods: ["day"], order: 1 },
-      { label: "Prendre le petit déjeuner", emoji: "🥣", childIds: [id1, id2], periods: ["day"], order: 2 },
-      { label: "S'habiller", emoji: "👕", childIds: [id1, id2], periods: ["day"], order: 3 },
-      { label: "Faire ses devoirs", emoji: "📚", childIds: [id1], periods: ["day"], order: 4 },
-      { label: "Ranger sa chambre", emoji: "🧸", childIds: [id1, id2], periods: ["night"], order: 5 },
-      { label: "Prendre la douche", emoji: "🚿", childIds: [id1, id2], periods: ["night"], order: 6 },
-      { label: "Lire un livre", emoji: "📖", childIds: [id1], periods: ["night"], order: 7 },
+      { label: "Se brosser les dents", emoji: "🪥", childIds: [id1, id2], periods: ["day", "night"], weekdays: all, order: 0 },
+      { label: "Faire le lit", emoji: "🛏️", childIds: [id1, id2], periods: ["day"], weekdays: all, order: 1 },
+      { label: "Prendre le petit déjeuner", emoji: "🥣", childIds: [id1, id2], periods: ["day"], weekdays: all, order: 2 },
+      { label: "S'habiller", emoji: "👕", childIds: [id1, id2], periods: ["day"], weekdays: all, order: 3 },
+      { label: "Faire ses devoirs", emoji: "📚", childIds: [id1], periods: ["day"], weekdays: [0, 1, 3, 4], order: 4 },
+      { label: "Ranger sa chambre", emoji: "🧸", childIds: [id1, id2], periods: ["night"], weekdays: all, order: 5 },
+      { label: "Prendre la douche", emoji: "🚿", childIds: [id1, id2], periods: ["night"], weekdays: all, order: 6 },
+      { label: "Lire un livre", emoji: "📖", childIds: [id1], periods: ["night"], weekdays: all, order: 7 },
     ]);
 
     await db.rewards.bulkAdd([

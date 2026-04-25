@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { motion } from "motion/react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { db, type Period, type Task } from "@/lib/db";
+import { db, ALL_WEEKDAYS, type Period, type Task, type Weekday } from "@/lib/db";
 import { TASK_EMOJIS } from "@/lib/utils";
+import { WEEKDAY_LABELS_SHORT } from "@/lib/day-night";
 import { StackHeader } from "./StackHeader";
 import { BottomSheet, useBottomSheetDismiss } from "@/components/ui/BottomSheet";
 
@@ -58,11 +59,13 @@ export function TasksManager({ back }: { back: () => void }) {
                   <div className="font-bold text-slate-800 truncate">
                     {t.label}
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
                     <span>
                       {t.periods.includes("day") && "☀️"}
                       {t.periods.includes("night") && "🌙"}
                     </span>
+                    <span>·</span>
+                    <WeekdaysSummary weekdays={t.weekdays ?? ALL_WEEKDAYS} />
                     <span>·</span>
                     <div className="flex -space-x-1.5">
                       {t.childIds.slice(0, 4).map((id) => {
@@ -108,6 +111,24 @@ export function TasksManager({ back }: { back: () => void }) {
   );
 }
 
+function WeekdaysSummary({ weekdays }: { weekdays: Weekday[] }) {
+  if (weekdays.length === 7) return <span className="text-[11px]">tous les jours</span>;
+  return (
+    <div className="flex gap-0.5">
+      {WEEKDAY_LABELS_SHORT.map((l, i) => (
+        <span
+          key={i}
+          className={`text-[10px] font-bold ${
+            weekdays.includes(i as Weekday) ? "text-sky-600" : "text-slate-300"
+          }`}
+        >
+          {l}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function TaskEditor({
   task,
   tasksCount,
@@ -141,6 +162,9 @@ function TaskForm({
   const [periods, setPeriods] = useState<Set<Period>>(
     new Set(task?.periods ?? ["day"])
   );
+  const [weekdays, setWeekdays] = useState<Set<Weekday>>(
+    new Set(task?.weekdays ?? ALL_WEEKDAYS)
+  );
   const [childIds, setChildIds] = useState<Set<number>>(
     new Set(task?.childIds ?? [])
   );
@@ -152,6 +176,13 @@ function TaskForm({
     if (next.size === 0) next.add(p);
     setPeriods(next);
   };
+  const toggleWeekday = (d: Weekday) => {
+    const next = new Set(weekdays);
+    if (next.has(d)) next.delete(d);
+    else next.add(d);
+    if (next.size === 0) next.add(d);
+    setWeekdays(next);
+  };
   const toggleChild = (id: number) => {
     const next = new Set(childIds);
     if (next.has(id)) next.delete(id);
@@ -160,12 +191,14 @@ function TaskForm({
   };
 
   const save = async () => {
-    if (!label.trim() || childIds.size === 0) return;
+    if (!label.trim() || childIds.size === 0 || weekdays.size === 0) return;
+    const sortedWeekdays = Array.from(weekdays).sort((a, b) => a - b) as Weekday[];
     if (task) {
       await db.tasks.update(task.id!, {
         label: label.trim(),
         emoji,
         periods: Array.from(periods),
+        weekdays: sortedWeekdays,
         childIds: Array.from(childIds),
       });
     } else {
@@ -173,6 +206,7 @@ function TaskForm({
         label: label.trim(),
         emoji,
         periods: Array.from(periods),
+        weekdays: sortedWeekdays,
         childIds: Array.from(childIds),
         order: tasksCount,
       });
@@ -188,102 +222,125 @@ function TaskForm({
   };
 
   return (
-    <>
-      <div className="px-5 pb-6 space-y-4">
-        <input
-          type="text"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          placeholder="Nom de la tâche"
-          className="w-full rounded-2xl bg-slate-100 px-4 py-3 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-300"
-          autoFocus
-        />
+    <div className="px-5 pb-6 space-y-4">
+      <input
+        type="text"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        placeholder="Nom de la tâche"
+        className="w-full rounded-2xl bg-slate-100 px-4 py-3 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-300"
+        autoFocus
+      />
 
-        <div>
-          <label className="text-xs font-bold text-slate-500 mb-2 block">EMOJI</label>
-          <div className="grid grid-cols-8 gap-1.5">
-            {TASK_EMOJIS.map((m) => (
-              <button
-                key={m}
-                onClick={() => setEmoji(m)}
-                className={`aspect-square rounded-xl flex items-center justify-center text-2xl transition ${
-                  emoji === m
-                    ? "bg-sky-100 ring-2 ring-sky-400"
-                    : "bg-slate-50"
-                }`}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="text-xs font-bold text-slate-500 mb-2 block">QUAND ?</label>
-          <div className="flex gap-2">
+      <div>
+        <label className="text-xs font-bold text-slate-500 mb-2 block">EMOJI</label>
+        <div className="grid grid-cols-8 gap-1">
+          {TASK_EMOJIS.map((m) => (
             <button
-              onClick={() => togglePeriod("day")}
-              className={`flex-1 rounded-full px-4 py-2.5 font-semibold transition ${
-                periods.has("day")
-                  ? "bg-amber-400 text-white shadow"
-                  : "bg-slate-100 text-slate-600"
+              key={m}
+              onClick={() => setEmoji(m)}
+              className={`aspect-square rounded-lg flex items-center justify-center text-lg transition ${
+                emoji === m
+                  ? "bg-sky-100 ring-2 ring-sky-400"
+                  : "bg-slate-50"
               }`}
             >
-              ☀️ Journée
+              {m}
             </button>
-            <button
-              onClick={() => togglePeriod("night")}
-              className={`flex-1 rounded-full px-4 py-2.5 font-semibold transition ${
-                periods.has("night")
-                  ? "bg-indigo-500 text-white shadow"
-                  : "bg-slate-100 text-slate-600"
-              }`}
-            >
-              🌙 Soir
-            </button>
-          </div>
+          ))}
         </div>
-
-        <div>
-          <label className="text-xs font-bold text-slate-500 mb-2 block">ASSIGNÉE À</label>
-          <div className="flex flex-wrap gap-2">
-            {children.map((c) => {
-              const active = childIds.has(c.id!);
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => toggleChild(c.id!)}
-                  className={`flex items-center gap-2 rounded-full px-4 py-2 font-semibold text-sm transition ${
-                    active ? "text-white shadow" : "bg-slate-100 text-slate-700"
-                  }`}
-                  style={active ? { backgroundColor: c.color } : undefined}
-                >
-                  <span className="text-lg">{c.mascot}</span>
-                  {c.name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={save}
-          disabled={!label.trim() || childIds.size === 0}
-          className="w-full rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-400 text-white font-bold py-3.5 shadow-lg disabled:opacity-50"
-        >
-          {task ? "Enregistrer" : "Créer"}
-        </motion.button>
-
-        {task && (
-          <button
-            onClick={remove}
-            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-red-50 text-red-600 font-bold py-3"
-          >
-            <Trash2 className="size-4" /> Supprimer cette tâche
-          </button>
-        )}
       </div>
-    </>
+
+      <div>
+        <label className="text-xs font-bold text-slate-500 mb-2 block">QUAND ?</label>
+        <div className="flex gap-2">
+          <button
+            onClick={() => togglePeriod("day")}
+            className={`flex-1 rounded-full px-4 py-2.5 font-semibold transition ${
+              periods.has("day")
+                ? "bg-amber-400 text-white shadow"
+                : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            ☀️ Journée
+          </button>
+          <button
+            onClick={() => togglePeriod("night")}
+            className={`flex-1 rounded-full px-4 py-2.5 font-semibold transition ${
+              periods.has("night")
+                ? "bg-indigo-500 text-white shadow"
+                : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            🌙 Soir
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label className="text-xs font-bold text-slate-500 mb-2 block">JOURS DE LA SEMAINE</label>
+        <div className="grid grid-cols-7 gap-1">
+          {WEEKDAY_LABELS_SHORT.map((l, i) => {
+            const d = i as Weekday;
+            const active = weekdays.has(d);
+            return (
+              <button
+                key={i}
+                onClick={() => toggleWeekday(d)}
+                className={`aspect-square rounded-xl font-bold text-sm transition ${
+                  active
+                    ? "bg-sky-500 text-white shadow"
+                    : "bg-slate-100 text-slate-400"
+                }`}
+                aria-label={`Jour ${l}`}
+                aria-pressed={active}
+              >
+                {l}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <label className="text-xs font-bold text-slate-500 mb-2 block">ASSIGNÉE À</label>
+        <div className="flex flex-wrap gap-2">
+          {children.map((c) => {
+            const active = childIds.has(c.id!);
+            return (
+              <button
+                key={c.id}
+                onClick={() => toggleChild(c.id!)}
+                className={`flex items-center gap-2 rounded-full px-3 py-1.5 font-semibold text-sm transition ${
+                  active ? "text-white shadow" : "bg-slate-100 text-slate-700"
+                }`}
+                style={active ? { backgroundColor: c.color } : undefined}
+              >
+                <span className="text-base">{c.mascot}</span>
+                {c.name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        onClick={save}
+        disabled={!label.trim() || childIds.size === 0 || weekdays.size === 0}
+        className="w-full rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-400 text-white font-bold py-3.5 shadow-lg disabled:opacity-50"
+      >
+        {task ? "Enregistrer" : "Créer"}
+      </motion.button>
+
+      {task && (
+        <button
+          onClick={remove}
+          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-red-50 text-red-600 font-bold py-3"
+        >
+          <Trash2 className="size-4" /> Supprimer cette tâche
+        </button>
+      )}
+    </div>
   );
 }

@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { Star } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import type { Child, Period, Task, TaskCompletion } from "@/lib/db";
+import { AnimatePresence, Reorder, motion, useDragControls } from "motion/react";
+import { db, type Child, type Period, type Task, type TaskCompletion } from "@/lib/db";
 import { TaskCard } from "./TaskCard";
 
 export function ChildColumn({
@@ -26,11 +26,32 @@ export function ChildColumn({
     [completions]
   );
 
-  const sorted = useMemo(() => {
-    const todo = tasks.filter((t) => !doneIds.has(t.id!));
-    const done = tasks.filter((t) => doneIds.has(t.id!));
-    return [...todo, ...done];
+  const todo = useMemo(() => {
+    const filtered = tasks.filter((t) => !doneIds.has(t.id!));
+    const order = child.taskOrder ?? [];
+    const indexOf = (id: number) => {
+      const i = order.indexOf(id);
+      return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+    };
+    return filtered.slice().sort((a, b) => {
+      const ai = indexOf(a.id!);
+      const bi = indexOf(b.id!);
+      if (ai !== bi) return ai - bi;
+      return a.order - b.order;
+    });
+  }, [tasks, doneIds, child.taskOrder]);
+
+  const done = useMemo(() => {
+    return tasks.filter((t) => doneIds.has(t.id!));
   }, [tasks, doneIds]);
+
+  const onReorder = async (newTodo: Task[]) => {
+    const order = [
+      ...newTodo.map((t) => t.id!),
+      ...done.map((t) => t.id!),
+    ];
+    await db.children.update(child.id!, { taskOrder: order });
+  };
 
   return (
     <div
@@ -56,35 +77,105 @@ export function ChildColumn({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
-        <AnimatePresence initial={false}>
-          {sorted.length === 0 && (
-            <div className="text-center text-slate-400 text-sm py-10">
-              Aucune tâche pour cette période
-            </div>
-          )}
-          {sorted.map((task) => (
-            <motion.div
-              key={task.id}
-              layout
-              layoutId={`task-${child.id}-${task.id}`}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ type: "spring", stiffness: 400, damping: 32 }}
-            >
-              <TaskCard
+      <div className="flex-1 overflow-y-auto px-3 py-3">
+        {todo.length === 0 && done.length === 0 && (
+          <div className="text-center text-slate-400 text-sm py-10">
+            Aucune tâche pour cette période
+          </div>
+        )}
+
+        {todo.length > 0 && (
+          <Reorder.Group
+            axis="y"
+            values={todo}
+            onReorder={onReorder}
+            className="space-y-2"
+            as="div"
+          >
+            {todo.map((task) => (
+              <ReorderableTask
+                key={task.id}
                 task={task}
                 childId={child.id!}
                 period={period}
-                done={doneIds.has(task.id!)}
                 starsPerTask={starsPerTask}
                 childColor={child.color}
               />
-            </motion.div>
-          ))}
-        </AnimatePresence>
+            ))}
+          </Reorder.Group>
+        )}
+
+        {done.length > 0 && todo.length > 0 && <div className="h-2" />}
+
+        {done.length > 0 && (
+          <div className="space-y-2">
+            <AnimatePresence initial={false}>
+              {done.map((task) => (
+                <motion.div
+                  key={task.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                >
+                  <TaskCard
+                    task={task}
+                    childId={child.id!}
+                    period={period}
+                    done
+                    starsPerTask={starsPerTask}
+                    childColor={child.color}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function ReorderableTask({
+  task,
+  childId,
+  period,
+  starsPerTask,
+  childColor,
+}: {
+  task: Task;
+  childId: number;
+  period: Period;
+  starsPerTask: number;
+  childColor: string;
+}) {
+  const controls = useDragControls();
+  return (
+    <Reorder.Item
+      value={task}
+      dragListener={false}
+      dragControls={controls}
+      whileDrag={{
+        scale: 1.04,
+        zIndex: 50,
+        boxShadow: "0 14px 36px rgba(15, 23, 42, 0.18)",
+      }}
+      transition={{ type: "spring", stiffness: 400, damping: 32 }}
+      layout
+      as="div"
+      className="list-none"
+    >
+      <TaskCard
+        task={task}
+        childId={childId}
+        period={period}
+        done={false}
+        starsPerTask={starsPerTask}
+        childColor={childColor}
+        draggable
+        onStartDrag={(e) => controls.start(e)}
+      />
+    </Reorder.Item>
   );
 }
