@@ -78,3 +78,10 @@ button {
   80% { transform: translateX(6px); }
 }
 .shake { animation: shake 0.4s; }
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-0.9deg); }
+  50% { transform: rotate(0.9deg); }
+}
+.wiggle { animation: wiggle 0.18s ease-in-out infinite; }
+.wiggle-alt { animation: wiggle 0.22s ease-in-out infinite reverse; }

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, ArrowDownUp, Check } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { ALL_WEEKDAYS, db } from "@/lib/db";
 import { currentPeriod, currentWeekday } from "@/lib/day-night";
@@ -27,6 +27,8 @@ export function TasksBoard() {
     ? currentPeriod(settings.dayNightThreshold)
     : "day";
   const todayWeekday = currentWeekday();
+
+  const [reorderMode, setReorderMode] = useState(false);
 
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -55,32 +57,61 @@ export function TasksBoard() {
     >
       <DecorativeSky night={isNight} />
 
-      <div className="relative z-10 flex items-center justify-between px-4 pt-4">
+      <div className="relative z-10 flex items-center justify-between px-4 pt-4 gap-2">
         <div className={isNight ? "text-white" : "text-slate-800"}>
           <h1 className="text-2xl font-bold leading-tight">
-            {isNight ? "Bonsoir !" : "Bonjour !"}
+            {reorderMode ? "Réorganiser" : isNight ? "Bonsoir !" : "Bonjour !"}
           </h1>
           <p className={`text-sm ${isNight ? "text-white/70" : "text-slate-600"}`}>
-            {isNight ? "Tâches du soir" : "Tâches de la journée"}
+            {reorderMode
+              ? "Glisse les tâches pour les réordonner"
+              : isNight
+                ? "Tâches du soir"
+                : "Tâches de la journée"}
           </p>
         </div>
 
-        <div
-          className={`flex items-center gap-2 rounded-full px-4 py-2 shadow-lg font-semibold text-sm pointer-events-none ${
-            isNight
-              ? "bg-white/20 text-white backdrop-blur border border-white/20"
-              : "bg-white text-slate-700"
-          }`}
-          aria-label={isNight ? "Période : soir" : "Période : jour"}
-        >
-          {isNight ? (
-            <>
-              <Moon className="size-4" strokeWidth={2.5} /> Soir
-            </>
-          ) : (
-            <>
-              <Sun className="size-4" strokeWidth={2.5} /> Jour
-            </>
+        <div className="flex items-center gap-2 shrink-0">
+          {!reorderMode && (
+            <div
+              className={`flex items-center gap-2 rounded-full px-3 py-2 shadow-lg font-semibold text-sm pointer-events-none ${
+                isNight
+                  ? "bg-white/20 text-white backdrop-blur border border-white/20"
+                  : "bg-white text-slate-700"
+              }`}
+              aria-label={isNight ? "Période : soir" : "Période : jour"}
+            >
+              {isNight ? (
+                <Moon className="size-4" strokeWidth={2.5} />
+              ) : (
+                <Sun className="size-4" strokeWidth={2.5} />
+              )}
+            </div>
+          )}
+
+          {children && children.length > 0 && (
+            reorderMode ? (
+              <button
+                onClick={() => setReorderMode(false)}
+                className="flex items-center gap-1.5 rounded-full px-4 py-2 shadow-lg font-bold text-sm bg-emerald-500 text-white active:scale-95"
+                aria-label="Terminer la réorganisation"
+              >
+                <Check className="size-4" strokeWidth={3} /> Terminer
+              </button>
+            ) : (
+              <button
+                onClick={() => setReorderMode(true)}
+                className={`size-10 rounded-full shadow-lg flex items-center justify-center active:scale-95 ${
+                  isNight
+                    ? "bg-white/20 text-white backdrop-blur border border-white/20"
+                    : "bg-white text-slate-700"
+                }`}
+                aria-label="Réorganiser les tâches"
+                title="Réorganiser les tâches"
+              >
+                <ArrowDownUp className="size-4" strokeWidth={2.5} />
+              </button>
+            )
           )}
         </div>
       </div>
@@ -92,7 +123,7 @@ export function TasksBoard() {
           <div className="h-full overflow-x-auto overflow-y-hidden no-scrollbar px-4 pb-28">
             <div className="flex gap-4 h-full">
               <AnimatePresence mode="popLayout">
-                {children.map((child) => (
+                {children.map((child, idx) => (
                   <motion.div
                     key={child.id}
                     layout
@@ -115,6 +146,8 @@ export function TasksBoard() {
                       period={period}
                       night={isNight}
                       starsPerTask={settings.starsPerTask}
+                      reorderMode={reorderMode}
+                      index={idx}
                     />
                   </motion.div>
                 ))}

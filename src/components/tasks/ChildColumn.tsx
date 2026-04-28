@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { Star } from "lucide-react";
-import { AnimatePresence, Reorder, motion, useDragControls } from "motion/react";
+import { AnimatePresence, Reorder, motion } from "motion/react";
 import { db, type Child, type Period, type Task, type TaskCompletion } from "@/lib/db";
 import { TaskCard } from "./TaskCard";
 
@@ -13,6 +13,8 @@ export function ChildColumn({
   period,
   night,
   starsPerTask,
+  reorderMode,
+  index,
 }: {
   child: Child;
   tasks: Task[];
@@ -20,6 +22,8 @@ export function ChildColumn({
   period: Period;
   night: boolean;
   starsPerTask: number;
+  reorderMode: boolean;
+  index: number;
 }) {
   const doneIds = useMemo(
     () => new Set(completions.map((c) => c.taskId)),
@@ -99,7 +103,7 @@ export function ChildColumn({
             className="space-y-2"
             as="div"
           >
-            {todo.map((task) => (
+            {todo.map((task, i) => (
               <ReorderableTask
                 key={task.id}
                 task={task}
@@ -108,6 +112,8 @@ export function ChildColumn({
                 starsPerTask={starsPerTask}
                 childColor={child.color}
                 iconOnly={!!child.iconOnly}
+                reorderMode={reorderMode}
+                wiggleAlt={(index + i) % 2 === 1}
               />
             ))}
           </Reorder.Group>
@@ -118,7 +124,7 @@ export function ChildColumn({
         {done.length > 0 && (
           <div className="space-y-2">
             <AnimatePresence initial={false}>
-              {done.map((task) => (
+              {done.map((task, i) => (
                 <motion.div
                   key={task.id}
                   layout
@@ -126,6 +132,13 @@ export function ChildColumn({
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  className={
+                    reorderMode
+                      ? (index + todo.length + i) % 2 === 0
+                        ? "wiggle"
+                        : "wiggle-alt"
+                      : ""
+                  }
                 >
                   <TaskCard
                     task={task}
@@ -135,6 +148,7 @@ export function ChildColumn({
                     starsPerTask={starsPerTask}
                     childColor={child.color}
                     iconOnly={!!child.iconOnly}
+                    reorderMode={reorderMode}
                   />
                 </motion.div>
               ))}
@@ -153,6 +167,8 @@ function ReorderableTask({
   starsPerTask,
   childColor,
   iconOnly,
+  reorderMode,
+  wiggleAlt,
 }: {
   task: Task;
   childId: number;
@@ -160,13 +176,13 @@ function ReorderableTask({
   starsPerTask: number;
   childColor: string;
   iconOnly: boolean;
+  reorderMode: boolean;
+  wiggleAlt: boolean;
 }) {
-  const controls = useDragControls();
   return (
     <Reorder.Item
       value={task}
-      dragListener={false}
-      dragControls={controls}
+      dragListener={reorderMode}
       whileDrag={{
         scale: 1.04,
         zIndex: 50,
@@ -175,7 +191,7 @@ function ReorderableTask({
       transition={{ type: "spring", stiffness: 400, damping: 32 }}
       layout
       as="div"
-      className="list-none"
+      className={`list-none ${reorderMode ? (wiggleAlt ? "wiggle-alt" : "wiggle") : ""}`}
     >
       <TaskCard
         task={task}
@@ -184,9 +200,8 @@ function ReorderableTask({
         done={false}
         starsPerTask={starsPerTask}
         childColor={childColor}
-        draggable
         iconOnly={iconOnly}
-        onStartDrag={(e) => controls.start(e)}
+        reorderMode={reorderMode}
       />
     </Reorder.Item>
   );
