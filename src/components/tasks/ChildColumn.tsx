@@ -124,34 +124,36 @@ export function ChildColumn({
         {done.length > 0 && (
           <div className="space-y-2">
             <AnimatePresence initial={false}>
-              {done.map((task, i) => (
-                <motion.div
-                  key={task.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                  className={
-                    reorderMode
-                      ? (index + todo.length + i) % 2 === 0
-                        ? "wiggle"
-                        : "wiggle-alt"
-                      : ""
-                  }
-                >
-                  <TaskCard
-                    task={task}
-                    childId={child.id!}
-                    period={period}
-                    done
-                    starsPerTask={starsPerTask}
-                    childColor={child.color}
-                    iconOnly={!!child.iconOnly}
-                    reorderMode={reorderMode}
-                  />
-                </motion.div>
-              ))}
+              {done.map((task, i) => {
+                const wiggleAlt = (index + todo.length + i) % 2 === 1;
+                return (
+                  <motion.div
+                    key={task.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  >
+                    <div
+                      className={
+                        reorderMode ? (wiggleAlt ? "wiggle-alt" : "wiggle") : ""
+                      }
+                    >
+                      <TaskCard
+                        task={task}
+                        childId={child.id!}
+                        period={period}
+                        done
+                        starsPerTask={starsPerTask}
+                        childColor={child.color}
+                        iconOnly={!!child.iconOnly}
+                        reorderMode={reorderMode}
+                      />
+                    </div>
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </div>
         )}
@@ -191,18 +193,24 @@ function ReorderableTask({
       transition={{ type: "spring", stiffness: 400, damping: 32 }}
       layout
       as="div"
-      className={`list-none ${reorderMode ? (wiggleAlt ? "wiggle-alt" : "wiggle") : ""}`}
+      className="list-none"
     >
-      <TaskCard
-        task={task}
-        childId={childId}
-        period={period}
-        done={false}
-        starsPerTask={starsPerTask}
-        childColor={childColor}
-        iconOnly={iconOnly}
-        reorderMode={reorderMode}
-      />
+      <div
+        className={
+          reorderMode ? (wiggleAlt ? "wiggle-alt" : "wiggle") : ""
+        }
+      >
+        <TaskCard
+          task={task}
+          childId={childId}
+          period={period}
+          done={false}
+          starsPerTask={starsPerTask}
+          childColor={childColor}
+          iconOnly={iconOnly}
+          reorderMode={reorderMode}
+        />
+      </div>
     </Reorder.Item>
   );
 }
