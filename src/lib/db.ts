@@ -16,6 +16,8 @@ export interface Child {
   stars: number;
   /** Ordre des taskIds spécifique à cet enfant. Si absent, fallback sur task.order. */
   taskOrder?: number[];
+  /** Affichage simplifié : pas de label, emojis géants. Pour les enfants qui ne lisent pas. */
+  iconOnly?: boolean;
 }
 
 export interface Task {
@@ -93,6 +95,20 @@ class DailyKidsDB extends Dexie {
           if (!Array.isArray(t.weekdays) || t.weekdays.length === 0) {
             t.weekdays = [...ALL_WEEKDAYS];
           }
+        });
+      });
+    this.version(3)
+      .stores({
+        children: "++id, order",
+        tasks: "++id, order",
+        completions: "++id, [taskId+childId+date+period], date, childId",
+        events: "++id, date",
+        rewards: "++id",
+        settings: "id",
+      })
+      .upgrade(async (tx) => {
+        await tx.table("children").toCollection().modify((c) => {
+          if (typeof c.iconOnly === "undefined") c.iconOnly = false;
         });
       });
   }

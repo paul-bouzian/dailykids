@@ -2,40 +2,49 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
-import { X } from "lucide-react";
-import { db, type Child, type Recurrence } from "@/lib/db";
+import { Trash2, X } from "lucide-react";
+import { db, type CalendarEvent, type Child, type Recurrence } from "@/lib/db";
 import { ymd } from "@/lib/utils";
 import { BottomSheet, useBottomSheetDismiss } from "@/components/ui/BottomSheet";
 
 export function EventModal({
+  event,
   initialDate,
   children,
   onClose,
 }: {
+  event?: CalendarEvent;
   initialDate?: string;
   children: Child[];
   onClose: () => void;
 }) {
+  const isEdit = !!event;
   return (
-    <BottomSheet onClose={onClose} title="Nouvel événement">
-      <EventForm initialDate={initialDate} children={children} />
+    <BottomSheet onClose={onClose} title={isEdit ? "Modifier l'événement" : "Nouvel événement"}>
+      <EventForm event={event} initialDate={initialDate} children={children} />
     </BottomSheet>
   );
 }
 
 function EventForm({
+  event,
   initialDate,
   children,
 }: {
+  event?: CalendarEvent;
   initialDate?: string;
   children: Child[];
 }) {
   const dismiss = useBottomSheetDismiss();
-  const [label, setLabel] = useState("");
-  const [emoji, setEmoji] = useState("🎉");
-  const [date, setDate] = useState(initialDate ?? ymd());
-  const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [recurrence, setRecurrence] = useState<Recurrence>("none");
+  const [label, setLabel] = useState(event?.label ?? "");
+  const [emoji, setEmoji] = useState(event?.emoji ?? "🎉");
+  const [date, setDate] = useState(event?.date ?? initialDate ?? ymd());
+  const [selected, setSelected] = useState<Set<number>>(
+    new Set(event?.childIds ?? [])
+  );
+  const [recurrence, setRecurrence] = useState<Recurrence>(
+    event?.recurrence ?? "none"
+  );
 
   const toggle = (id: number) => {
     const next = new Set(selected);
@@ -46,13 +55,24 @@ function EventForm({
 
   const save = async () => {
     if (!label.trim()) return;
-    await db.events.add({
+    const payload = {
       label: label.trim(),
       emoji,
       date,
       childIds: Array.from(selected),
       recurrence,
-    });
+    };
+    if (event?.id) {
+      await db.events.update(event.id, payload);
+    } else {
+      await db.events.add(payload);
+    }
+    dismiss?.();
+  };
+
+  const remove = async () => {
+    if (!event?.id) return;
+    await db.events.delete(event.id);
     dismiss?.();
   };
 
@@ -74,7 +94,7 @@ function EventForm({
             onChange={(e) => setLabel(e.target.value)}
             placeholder="Nom de l'événement"
             className="flex-1 rounded-2xl bg-slate-100 px-4 py-3 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-300"
-            autoFocus
+            autoFocus={!event}
           />
         </div>
 
@@ -147,8 +167,17 @@ function EventForm({
           disabled={!label.trim()}
           className="w-full rounded-2xl bg-gradient-to-br from-orange-400 to-pink-400 text-white font-bold py-3.5 shadow-lg disabled:opacity-50"
         >
-          Créer l&apos;événement
+          {event ? "Enregistrer" : "Créer l'événement"}
         </motion.button>
+
+        {event && (
+          <button
+            onClick={remove}
+            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-red-50 text-red-600 font-bold py-3"
+          >
+            <Trash2 className="size-4" /> Supprimer cet événement
+          </button>
+        )}
       </div>
       <button
         onClick={() => dismiss?.()}

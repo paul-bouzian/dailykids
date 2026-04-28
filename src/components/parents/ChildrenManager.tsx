@@ -116,6 +116,7 @@ function ChildForm({
   const [name, setName] = useState(child?.name ?? "");
   const [mascot, setMascot] = useState(child?.mascot ?? MASCOTS[0]);
   const [color, setColor] = useState(child?.color ?? COLORS[0].hex);
+  const [iconOnly, setIconOnly] = useState(child?.iconOnly ?? false);
 
   const save = async () => {
     if (!name.trim()) return;
@@ -124,6 +125,7 @@ function ChildForm({
         name: name.trim(),
         mascot,
         color,
+        iconOnly,
       });
     } else {
       await db.children.add({
@@ -132,6 +134,7 @@ function ChildForm({
         color,
         order: childrenCount,
         stars: 0,
+        iconOnly,
       });
     }
     dismiss?.();
@@ -201,6 +204,32 @@ function ChildForm({
             ))}
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setIconOnly(!iconOnly)}
+          className="w-full flex items-center gap-3 rounded-2xl bg-slate-50 p-3 text-left"
+          aria-pressed={iconOnly}
+        >
+          <div className="text-3xl">🔠</div>
+          <div className="flex-1">
+            <div className="font-bold text-slate-800 text-sm">Affichage simplifié</div>
+            <div className="text-[11px] text-slate-500">
+              Pour les jeunes enfants : pas de texte, juste un grand emoji par tâche.
+            </div>
+          </div>
+          <div
+            className={`relative w-11 h-6 rounded-full transition shrink-0 ${
+              iconOnly ? "bg-emerald-500" : "bg-slate-300"
+            }`}
+          >
+            <div
+              className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${
+                iconOnly ? "left-[1.375rem]" : "left-0.5"
+              }`}
+            />
+          </div>
+        </button>
 
         <motion.button
           whileTap={{ scale: 0.97 }}

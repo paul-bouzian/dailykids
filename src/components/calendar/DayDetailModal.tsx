@@ -19,12 +19,14 @@ export function DayDetailModal({
   children,
   onClose,
   onAddEvent,
+  onEditEvent,
 }: {
   date: string;
   events: CalendarEvent[];
   children: Child[];
   onClose: () => void;
   onAddEvent: (d: string) => void;
+  onEditEvent: (e: CalendarEvent) => void;
 }) {
   const title = FORMATTER.format(parseYmd(date));
   return (
@@ -34,6 +36,7 @@ export function DayDetailModal({
         events={events}
         children={children}
         onAddEvent={onAddEvent}
+        onEditEvent={onEditEvent}
       />
     </BottomSheet>
   );
@@ -44,11 +47,13 @@ function DayDetailBody({
   events,
   children,
   onAddEvent,
+  onEditEvent,
 }: {
   date: string;
   events: CalendarEvent[];
   children: Child[];
   onAddEvent: (d: string) => void;
+  onEditEvent: (e: CalendarEvent) => void;
 }) {
   const dismiss = useBottomSheetDismiss();
   const dayEvents = events.filter((e) => eventOccursOn(e, date));
@@ -82,29 +87,39 @@ function DayDetailBody({
               return (
                 <div
                   key={e.id}
-                  className="flex items-center gap-3 rounded-2xl p-3 bg-slate-50"
+                  className="flex items-stretch rounded-2xl bg-slate-50 overflow-hidden"
                   style={{ borderLeft: `4px solid ${color}` }}
                 >
-                  <div className="text-3xl">{e.emoji || "📌"}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-slate-800 truncate">
-                      {e.label}
-                    </div>
-                    {who && (
-                      <div className="text-xs text-slate-500 truncate">{who}</div>
-                    )}
-                    {e.recurrence !== "none" && (
-                      <div className="text-[11px] text-sky-600 font-semibold">
-                        {e.recurrence === "weekly" ? "↻ Chaque semaine" : "↻ Chaque mois"}
+                  <button
+                    onClick={() => {
+                      onEditEvent(e);
+                      dismiss?.();
+                    }}
+                    className="flex items-center gap-3 flex-1 p-3 text-left active:bg-slate-100"
+                  >
+                    <div className="text-3xl">{e.emoji || "📌"}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-slate-800 truncate">
+                        {e.label}
                       </div>
-                    )}
-                  </div>
+                      {who && (
+                        <div className="text-xs text-slate-500 truncate">{who}</div>
+                      )}
+                      {e.recurrence !== "none" && (
+                        <div className="text-[11px] text-sky-600 font-semibold">
+                          {e.recurrence === "weekly" ? "↻ Chaque semaine" : "↻ Chaque mois"}
+                        </div>
+                      )}
+                    </div>
+                  </button>
                   <button
                     onClick={() => del(e.id!)}
-                    className="size-9 rounded-full bg-white flex items-center justify-center"
+                    className="px-3 flex items-center justify-center"
                     aria-label="Supprimer"
                   >
-                    <Trash2 className="size-4 text-red-500" />
+                    <div className="size-9 rounded-full bg-white flex items-center justify-center">
+                      <Trash2 className="size-4 text-red-500" />
+                    </div>
                   </button>
                 </div>
               );

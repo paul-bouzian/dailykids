@@ -4,10 +4,14 @@ import { useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { db, type CalendarEvent } from "@/lib/db";
 import { MonthGrid } from "./MonthGrid";
 import { EventModal } from "./EventModal";
 import { DayDetailModal } from "./DayDetailModal";
+
+type PendingAction =
+  | { type: "add"; date: string }
+  | { type: "edit"; event: CalendarEvent };
 
 const MONTH_NAMES = [
   "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -20,9 +24,13 @@ export function CalendarView() {
     return { year: d.getFullYear(), month: d.getMonth() };
   });
   const [direction, setDirection] = useState(0);
-  const [eventModal, setEventModal] = useState<{ date?: string } | null>(null);
+  const [eventModal, setEventModal] = useState<
+    | { mode: "add"; date?: string }
+    | { mode: "edit"; event: CalendarEvent }
+    | null
+  >(null);
   const [dayDetail, setDayDetail] = useState<string | null>(null);
-  const pendingAdd = useRef<string | null>(null);
+  const pendingAction = useRef<PendingAction | null>(null);
 
   const children = useLiveQuery(() => db.children.orderBy("order").toArray());
   const events = useLiveQuery(() => db.events.toArray());
@@ -60,7 +68,7 @@ export function CalendarView() {
             <ChevronRight className="size-5 text-slate-700" />
           </button>
           <button
-            onClick={() => setEventModal({})}
+            onClick={() => setEventModal({ mode: "add" })}
             className="ml-1 size-11 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 text-white shadow-lg flex items-center justify-center active:scale-95"
             aria-label="Ajouter un événement"
           >
@@ -100,7 +108,9 @@ export function CalendarView() {
 
       {eventModal && (
         <EventModal
-          initialDate={eventModal.date}
+          {...(eventModal.mode === "edit"
+            ? { event: eventModal.event }
+            : { initialDate: eventModal.date })}
           children={children ?? []}
           onClose={() => setEventModal(null)}
         />
@@ -112,14 +122,21 @@ export function CalendarView() {
           children={children ?? []}
           onClose={() => {
             setDayDetail(null);
-            if (pendingAdd.current) {
-              const d = pendingAdd.current;
-              pendingAdd.current = null;
-              setEventModal({ date: d });
+            const action = pendingAction.current;
+            if (action) {
+              pendingAction.current = null;
+              if (action.type === "add") {
+                setEventModal({ mode: "add", date: action.date });
+              } else {
+                setEventModal({ mode: "edit", event: action.event });
+              }
             }
           }}
           onAddEvent={(d) => {
-            pendingAdd.current = d;
+            pendingAction.current = { type: "add", date: d };
+          }}
+          onEditEvent={(e) => {
+            pendingAction.current = { type: "edit", event: e };
           }}
         />
       )}

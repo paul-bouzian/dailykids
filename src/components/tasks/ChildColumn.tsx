@@ -46,11 +46,18 @@ export function ChildColumn({
   }, [tasks, doneIds]);
 
   const onReorder = async (newTodo: Task[]) => {
-    const order = [
+    const visibleIds = new Set<number>([
       ...newTodo.map((t) => t.id!),
       ...done.map((t) => t.id!),
+    ]);
+    const previousOrder = child.taskOrder ?? [];
+    const hiddenInOrder = previousOrder.filter((id) => !visibleIds.has(id));
+    const newOrder = [
+      ...newTodo.map((t) => t.id!),
+      ...done.map((t) => t.id!),
+      ...hiddenInOrder,
     ];
-    await db.children.update(child.id!, { taskOrder: order });
+    await db.children.update(child.id!, { taskOrder: newOrder });
   };
 
   return (
@@ -100,6 +107,7 @@ export function ChildColumn({
                 period={period}
                 starsPerTask={starsPerTask}
                 childColor={child.color}
+                iconOnly={!!child.iconOnly}
               />
             ))}
           </Reorder.Group>
@@ -126,6 +134,7 @@ export function ChildColumn({
                     done
                     starsPerTask={starsPerTask}
                     childColor={child.color}
+                    iconOnly={!!child.iconOnly}
                   />
                 </motion.div>
               ))}
@@ -143,12 +152,14 @@ function ReorderableTask({
   period,
   starsPerTask,
   childColor,
+  iconOnly,
 }: {
   task: Task;
   childId: number;
   period: Period;
   starsPerTask: number;
   childColor: string;
+  iconOnly: boolean;
 }) {
   const controls = useDragControls();
   return (
@@ -174,6 +185,7 @@ function ReorderableTask({
         starsPerTask={starsPerTask}
         childColor={childColor}
         draggable
+        iconOnly={iconOnly}
         onStartDrag={(e) => controls.start(e)}
       />
     </Reorder.Item>
