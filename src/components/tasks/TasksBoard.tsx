@@ -45,6 +45,17 @@ export function TasksBoard() {
   }
 
   const isNight = period === "night";
+  const hasChildren = children.length > 0;
+
+  let title: string;
+  if (reorderMode) title = "Réorganiser";
+  else if (isNight) title = "Bonsoir !";
+  else title = "Bonjour !";
+
+  let subtitle: string;
+  if (reorderMode) subtitle = "Glisse les tâches pour les réordonner";
+  else if (isNight) subtitle = "Tâches du soir";
+  else subtitle = "Tâches de la journée";
 
   return (
     <div
@@ -59,59 +70,20 @@ export function TasksBoard() {
 
       <div className="relative z-10 flex items-center justify-between px-4 pt-4 gap-2">
         <div className={isNight ? "text-white" : "text-slate-800"}>
-          <h1 className="text-2xl font-bold leading-tight">
-            {reorderMode ? "Réorganiser" : isNight ? "Bonsoir !" : "Bonjour !"}
-          </h1>
+          <h1 className="text-2xl font-bold leading-tight">{title}</h1>
           <p className={`text-sm ${isNight ? "text-white/70" : "text-slate-600"}`}>
-            {reorderMode
-              ? "Glisse les tâches pour les réordonner"
-              : isNight
-                ? "Tâches du soir"
-                : "Tâches de la journée"}
+            {subtitle}
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {!reorderMode && (
-            <div
-              className={`flex items-center gap-2 rounded-full px-3 py-2 shadow-lg font-semibold text-sm pointer-events-none ${
-                isNight
-                  ? "bg-white/20 text-white backdrop-blur border border-white/20"
-                  : "bg-white text-slate-700"
-              }`}
-              aria-label={isNight ? "Période : soir" : "Période : jour"}
-            >
-              {isNight ? (
-                <Moon className="size-4" strokeWidth={2.5} />
-              ) : (
-                <Sun className="size-4" strokeWidth={2.5} />
-              )}
-            </div>
-          )}
-
-          {children && children.length > 0 && (
-            reorderMode ? (
-              <button
-                onClick={() => setReorderMode(false)}
-                className="flex items-center gap-1.5 rounded-full px-4 py-2 shadow-lg font-bold text-sm bg-emerald-500 text-white active:scale-95"
-                aria-label="Terminer la réorganisation"
-              >
-                <Check className="size-4" strokeWidth={3} /> Terminer
-              </button>
-            ) : (
-              <button
-                onClick={() => setReorderMode(true)}
-                className={`size-10 rounded-full shadow-lg flex items-center justify-center active:scale-95 ${
-                  isNight
-                    ? "bg-white/20 text-white backdrop-blur border border-white/20"
-                    : "bg-white text-slate-700"
-                }`}
-                aria-label="Réorganiser les tâches"
-                title="Réorganiser les tâches"
-              >
-                <ArrowDownUp className="size-4" strokeWidth={2.5} />
-              </button>
-            )
+          {!reorderMode && <PeriodBadge isNight={isNight} />}
+          {hasChildren && (
+            <ReorderToggle
+              reorderMode={reorderMode}
+              isNight={isNight}
+              onToggle={() => setReorderMode(!reorderMode)}
+            />
           )}
         </div>
       </div>
@@ -157,6 +129,61 @@ export function TasksBoard() {
         )}
       </div>
     </div>
+  );
+}
+
+function PeriodBadge({ isNight }: { isNight: boolean }) {
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-full px-3 py-2 shadow-lg font-semibold text-sm pointer-events-none ${
+        isNight
+          ? "bg-white/20 text-white backdrop-blur border border-white/20"
+          : "bg-white text-slate-700"
+      }`}
+      aria-label={isNight ? "Période : soir" : "Période : jour"}
+    >
+      {isNight ? (
+        <Moon className="size-4" strokeWidth={2.5} />
+      ) : (
+        <Sun className="size-4" strokeWidth={2.5} />
+      )}
+    </div>
+  );
+}
+
+function ReorderToggle({
+  reorderMode,
+  isNight,
+  onToggle,
+}: {
+  reorderMode: boolean;
+  isNight: boolean;
+  onToggle: () => void;
+}) {
+  if (reorderMode) {
+    return (
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-1.5 rounded-full px-4 py-2 shadow-lg font-bold text-sm bg-emerald-500 text-white active:scale-95"
+        aria-label="Terminer la réorganisation"
+      >
+        <Check className="size-4" strokeWidth={3} /> Terminer
+      </button>
+    );
+  }
+  return (
+    <button
+      onClick={onToggle}
+      className={`size-10 rounded-full shadow-lg flex items-center justify-center active:scale-95 ${
+        isNight
+          ? "bg-white/20 text-white backdrop-blur border border-white/20"
+          : "bg-white text-slate-700"
+      }`}
+      aria-label="Réorganiser les tâches"
+      title="Réorganiser les tâches"
+    >
+      <ArrowDownUp className="size-4" strokeWidth={2.5} />
+    </button>
   );
 }
 

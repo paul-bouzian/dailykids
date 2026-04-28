@@ -51,7 +51,7 @@ export function TaskCard({
         .where("id")
         .equals(childId)
         .modify((c) => {
-          c.stars = c.stars + starsPerTask;
+          c.stars += starsPerTask;
         });
       celebrate(x, y);
     }
